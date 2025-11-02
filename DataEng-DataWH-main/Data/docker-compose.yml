@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  postgres_db: 
+    image: postgres:14-alpine 
+    container_name: postgres_fraud_db
+    restart: always 
+    ports:
+      - "5432:5432" 
+    environment:
+      POSTGRES_USER: 'postgres'       
+      POSTGRES_PASSWORD: '123'        
+      POSTGRES_DB: ecomm_fraud_db     
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - fraud_detection_network
+      
+  pyspark_writer:
+    build:
+      context: .
+      dockerfile: Dockerfile.pyspark
+    container_name: pyspark_writer_fraud
+    volumes:
+      - .:/app 
+    depends_on:
+      - postgres_db
+    networks:
+      - fraud_detection_network
+    # ไม่ต้องรัน command อัตโนมัติ ให้รันด้วยตัวเองภายหลัง
+    command: tail -f /dev/null
+
+networks:
+  fraud_detection_network:
+    external: true
+      
+volumes:
+  postgres_data:
